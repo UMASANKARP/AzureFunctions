@@ -22,7 +22,7 @@ namespace FunctionApp
             var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/html; charset=utf-8");
 
-            string htmlContent = "<html><body><h1>Hello from Azure Functions App Uma Demo !</h1></body></html>";
+            string htmlContent = "<html><body><h1>Hello from Azure Functions!</h1></body></html>";
             response.WriteString(htmlContent);
 
             return response;
