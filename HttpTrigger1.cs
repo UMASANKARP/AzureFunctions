@@ -1,24 +1,32 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace FunctionAPP
 {
-    public class HttpTrigger1
+    public static class HttpFunction
     {
-        private readonly ILogger<HttpTrigger1> _logger;
-
-        public HttpTrigger1(ILogger<HttpTrigger1> logger)
+        [Function("HttpFunction")]
+        public static HttpResponseData Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestData req,
+            FunctionContext executionContext)
         {
-            _logger = logger;
-        }
+            // Retrieve the logger for the current execution context
+            var logger = executionContext.GetLogger("HttpFunction");
+            logger.LogInformation("Processing HTTP request.");
 
-        [Function("HttpTrigger1")]
-        public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
-        {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
-            return new OkObjectResult("Welcome to Azure Functions Demo 2 !");
+            // Create an HTTP response with status code OK (200)
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            
+            // Write a response message to the HTTP response body
+            response.WriteString("Welcome to .NET isolated worker !!");
+
+            // Log the response information
+            logger.LogInformation("Response created and sent.");
+
+            return response;
         }
     }
 }
