@@ -1,53 +1,29 @@
-using System;
-using System.Diagnostics;
-using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Dynatrace.OpenTelemetry;
-using OpenTelemetry.Trace;
 
 namespace FunctionApp
 {
     public class HttpExample
     {
-        private readonly TracerProvider _tracerProvider;
+        private readonly ILogger<HttpExample> _logger;
 
-        public HttpExample(TracerProvider tracerProvider)
+        public HttpExample(ILogger<HttpExample> logger)
         {
-            _tracerProvider = tracerProvider;
+            _logger = logger;
         }
 
         [Function("HttpExample")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestData req,
                                     FunctionContext executionContext)
         {
-            var logger = executionContext.GetLogger("HttpExample");
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "text/html; charset=utf-8");
 
-            using (var activity = new Activity("HttpExampleFunction"))
-            {
-                activity.Start();
-                Activity.Current = activity;
-
-                try
-                {
-                    // Your function logic here
-                    response.WriteString("Hello from Azure Functions Demo Uma 1 !");
-                }
-                finally
-                {
-                    activity.Stop();
-
-                    // Record any exceptions if needed
-                    if (response.StatusCode != HttpStatusCode.OK)
-                    {
-                        activity.SetStatus(Status.Error);
-                    }
-                }
-            }
+            string htmlContent = "<html><body><h1>Hello from Azure Functions App Uma Demo !</h1></body></html>";
+            response.WriteString(htmlContent);
 
             return response;
         }
