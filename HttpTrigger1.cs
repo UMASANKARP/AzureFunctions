@@ -1,24 +1,55 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Diagnostics;
+using System.Net;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using Dynatrace.OpenTelemetry;
+using OpenTelemetry.Trace;
 
-namespace FunctionAPP
+namespace FunctionApp
 {
-    public class HttpTrigger1
+    public class HttpExample
     {
-        private readonly ILogger<HttpTrigger1> _logger;
+        private readonly TracerProvider _tracerProvider;
 
-        public HttpTrigger1(ILogger<HttpTrigger1> logger)
+        public HttpExample(TracerProvider tracerProvider)
         {
-            _logger = logger;
+            _tracerProvider = tracerProvider;
         }
 
-        [Function("HttpTrigger1")]
-        public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
+        [Function("HttpExample")]
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
+                                    FunctionContext executionContext)
         {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
-            return new OkObjectResult("Welcome to Azure Functions Demo 4 !");
+            var logger = executionContext.GetLogger("HttpExample");
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+
+            using (var activity = new Activity("HttpExampleFunction"))
+            {
+                activity.Start();
+                Activity.Current = activity;
+
+                try
+                {
+                    // Your function logic here
+                    response.WriteString("Hello from Azure Functions Demo Uma 1 !");
+                }
+                finally
+                {
+                    activity.Stop();
+
+                    // Record any exceptions if needed
+                    if (response.StatusCode != HttpStatusCode.OK)
+                    {
+                        activity.SetStatus(Status.Error);
+                    }
+                }
+            }
+
+            return response;
         }
     }
 }
